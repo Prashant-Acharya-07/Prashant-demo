@@ -21,18 +21,14 @@ backdrop-filter:blur(8px);
 padding:20px 0;
 z-index:1000;
 }
-
 nav{display:flex;justify-content:space-between;align-items:center;}
-
 .logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;color:#38bdf8;}
 .logo-img{width:40px;height:40px;object-fit:contain;}
-
 .menu-dropdown{position:relative;}
 .menu-btn{background:#38bdf8;border:none;color:black;padding:8px 15px;border-radius:5px;font-weight:600;cursor:pointer;}
 .dropdown-list{display:none;position:absolute;top:40px;right:0;background:#1e293b;list-style:none;padding:10px 0;border-radius:5px;width:180px;}
 .dropdown-list li{padding:10px 20px;}
 .dropdown-list li a{color:white;text-decoration:none;display:block;}
-
 .cart-btn{cursor:pointer;background:#38bdf8;padding:8px 15px;border-radius:5px;color:black;font-weight:600;}
 
 .search-bar-top{
@@ -98,8 +94,8 @@ background:#020617;
 padding:15px;
 margin:10px auto;
 border-radius:5px;
-text-align:center; /* centers the review text */
-width:80%; /* keeps reviews centered with max width */
+text-align:center;
+width:80%;
 }
 
 footer{text-align:center;padding:20px;background:#020617;}
@@ -111,7 +107,6 @@ footer{text-align:center;padding:20px;background:#020617;}
 <header>
 <div class="container">
 <nav>
-
 <div class="logo">
 <img src="https://raw.githubusercontent.com/Prashant-Acharya-07/The-Boys-Shopping-Centre/main/logo.jpeg" class="logo-img">
 The Boys Shopping Centre ⚡
@@ -186,12 +181,18 @@ The Boys Shopping Centre ⚡
 © 2026 The Boys Shopping Centre | Nepal Electric Store
 </footer>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <script>
+// Toggle menu
 function toggleMenu(){
 let menu=document.getElementById("dropdown-list");
 menu.style.display=menu.style.display=="block"?"none":"block";
 }
 
+// Products & Cart
 let products=[
 {name:"Smartphone", price:80000, category:"phone", img:"https://images.pexels.com/photos/607812/pexels-photo-607812.jpeg?auto=compress&cs=tinysrgb&w=800"},
 {name:"Smart TV", price:150000, category:"tv", img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTt3u-eIe8bKGfxRMRzI7oBv872P7V6Nnl3rQ&s"},
@@ -238,39 +239,61 @@ function toggleCart(){
 document.getElementById("cart").classList.toggle("active");
 }
 
-/* ⭐ REVIEW SYSTEM */
-let reviews=JSON.parse(localStorage.getItem("reviews"))||[];
-
-function addReview(){
-let name=document.getElementById("rname").value;
-let rating=document.getElementById("rrating").value;
-let msg=document.getElementById("rmsg").value;
-if(name==""||msg==""){alert("Please fill all");return;}
-reviews.push({name,rating,msg});
-localStorage.setItem("reviews",JSON.stringify(reviews));
-displayReviews();
-document.getElementById("rname").value="";
-document.getElementById("rrating").value="5";
-document.getElementById("rmsg").value="";
-}
-
-function displayReviews(){
-let html="";
-reviews.forEach(r=>{
-html+=`<div class="review-item">
-<strong>${r.name}</strong> (${r.rating}⭐)
-<p>${r.msg}</p>
-</div>`;
-});
-document.getElementById("review-list").innerHTML=html;
-}
-displayReviews();
-
-/* ⭐ SEARCH PRODUCTS */
+// ⭐ SEARCH PRODUCTS
 function searchProduct(){
 let val=document.getElementById("search").value.toLowerCase();
 displayProducts(products.filter(p=>p.name.toLowerCase().includes(val)));
 }
+
+// ⭐ FIREBASE REVIEW SYSTEM
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+function addReview(){
+  const name=document.getElementById("rname").value;
+  const rating=document.getElementById("rrating").value;
+  const msg=document.getElementById("rmsg").value;
+  if(name=="" || msg==""){ alert("Please fill all"); return; }
+
+  db.collection("reviews").add({
+    name:name,
+    rating:rating,
+    msg:msg,
+    timestamp:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    document.getElementById("rname").value="";
+    document.getElementById("rrating").value="5";
+    document.getElementById("rmsg").value="";
+    displayReviews();
+  });
+}
+
+function displayReviews(){
+  db.collection("reviews").orderBy("timestamp","desc").get()
+    .then(snapshot=>{
+      let html="";
+      snapshot.forEach(doc=>{
+        const r = doc.data();
+        html+=`<div class="review-item">
+        <strong>${r.name}</strong> (${r.rating}⭐)
+        <p>${r.msg}</p>
+        </div>`;
+      });
+      document.getElementById("review-list").innerHTML = html;
+    });
+}
+
+// Initial load
+displayReviews();
 </script>
+
 </body>
 </html>
